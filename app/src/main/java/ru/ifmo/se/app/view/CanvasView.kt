@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -18,12 +17,12 @@ class CanvasView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val paint = Paint().apply {
-        color = Color.BLUE
+        color = Color.RED
         style = Paint.Style.FILL
     }
 
     private val figurePaint = Paint().apply {
-        color = Color.RED
+        color = 0x6F34ebdb
         style = Paint.Style.FILL
     }
 

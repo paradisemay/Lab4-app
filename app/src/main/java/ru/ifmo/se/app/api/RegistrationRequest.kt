@@ -1,3 +1,6 @@
 package ru.ifmo.se.app.api
 
-data class RegistrationRequest(val username: String, val password: String)
+data class RegistrationRequest(
+    val login: String,
+    val password: String
+)

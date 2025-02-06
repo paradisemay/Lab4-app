@@ -1,6 +1,6 @@
 package ru.ifmo.se.app.api
 
 data class LoginRequest(
-    val username: String,
+    val login: String,
     val password: String
 )
