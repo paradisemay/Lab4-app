@@ -103,17 +103,4 @@ class LoginActivity : AppCompatActivity() {
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
-
-    // Если требуется хэширование пароля, можно оставить этот метод.
-    // В данном примере отправляется открытый пароль.
-    private fun hashPassword(password: String): String {
-        return try {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val hashBytes = digest.digest(password.toByteArray(Charsets.UTF_8))
-            hashBytes.joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            password
-        }
-    }
 }

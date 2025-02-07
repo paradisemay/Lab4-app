@@ -9,11 +9,23 @@ import android.view.MotionEvent
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import okhttp3.OkHttpClient
+import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import ru.ifmo.se.app.R
+import ru.ifmo.se.app.api.ApiService
+import ru.ifmo.se.app.api.PointRequest
+import ru.ifmo.se.app.api.PointResponse
 import ru.ifmo.se.app.model.GraphData
+import ru.ifmo.se.app.util.AuthInterceptor
 import ru.ifmo.se.app.util.TokenManager
 import ru.ifmo.se.app.viewmodel.ContentViewModel
 import ru.ifmo.se.app.view.CanvasView
+import ru.ifmo.se.app.view.PointStatus
 
 class ContentActivity : AppCompatActivity() {
 
@@ -111,10 +123,17 @@ class ContentActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val newGraphData = GraphData(xValue, yValue, rValue)
-            viewModel.updateGraph(newGraphData)
-            // При нажатии на "Нарисовать" точка отобразится
-            canvasView.setShowPoint(true)
+            checkPoint(xValue, yValue, rValue) { result ->
+                result?.let { hit ->
+                    if (hit) {
+                        viewModel.updateGraph(GraphData(xValue, yValue, rValue, PointStatus.HIT))
+                        canvasView.setShowPoint(true)
+                    } else {
+                        viewModel.updateGraph(GraphData(xValue, yValue, rValue, PointStatus.MISS))
+                        canvasView.setShowPoint(true)
+                    }
+                }
+            }
         }
 
         // Обработка нажатия кнопки "Выйти"
@@ -132,8 +151,19 @@ class ContentActivity : AppCompatActivity() {
                 view.performClick()
                 // Вызываем метод-заглушку onGraphTouch с координатами касания
                 val (xPoint, yPoint) = canvasView.onGraphTouch(event.x, event.y)
-                viewModel.updateGraph(GraphData(xPoint, yPoint, activeRButton?.text.toString().toFloatOrNull() ?: 1f))
-                canvasView.setShowPoint(true)
+                val rPoint = activeRButton?.text.toString().toFloatOrNull() ?: 1f
+
+                checkPoint(xPoint, yPoint, rPoint) { result ->
+                    result?.let { hit ->
+                        if (hit) {
+                            viewModel.updateGraph(GraphData(xPoint, yPoint, rPoint, PointStatus.HIT))
+                            canvasView.setShowPoint(true)
+                        } else {
+                            viewModel.updateGraph(GraphData(xPoint, yPoint, rPoint, PointStatus.MISS))
+                            canvasView.setShowPoint(true)
+                        }
+                    }
+                }
                 true
             } else {
                 false
@@ -169,8 +199,8 @@ class ContentActivity : AppCompatActivity() {
 
         // Обновляем данные графа: сохраняем текущие x и y, а радиус берём из выбранной кнопки
         val newRadius = selectedButton.text.toString().toFloatOrNull() ?: 0f
-        val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f)
-        val updatedGraphData = GraphData(currentGraphData.x, currentGraphData.y, newRadius)
+        val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
+        val updatedGraphData = GraphData(currentGraphData.x, currentGraphData.y, newRadius, currentGraphData.status)
         viewModel.updateGraph(updatedGraphData)
 
         // Обновляем CanvasView без отрисовки точки – обновятся только подписи и оси
@@ -200,9 +230,70 @@ class ContentActivity : AppCompatActivity() {
     // Обновляем данные графа, оставляя x и y без изменений, и не отрисовываем точку.
     private fun updateGraphWithDefaultR() {
         val defaultR = activeRButton?.text.toString().toFloatOrNull() ?: 0f
-        val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f)
-        val updatedGraphData = GraphData(currentGraphData.x, currentGraphData.y, defaultR)
+        val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
+        val updatedGraphData = GraphData(currentGraphData.x, currentGraphData.y, defaultR, currentGraphData.status)
         viewModel.updateGraph(updatedGraphData)
         canvasView.setShowPoint(false)
+    }
+
+    private fun checkPoint(x: Float, y: Float, r: Float, callback: (Boolean?) -> Unit){
+        val client = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(this))
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://45.134.12.67:8080/server2-1.0-SNAPSHOT/api/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val apiService = retrofit.create(ApiService::class.java)
+        val request = PointRequest(x, y, r)
+
+        apiService.checkPoint(request).enqueue(object : Callback<PointResponse> {
+            override fun onResponse(call: Call<PointResponse>, response: Response<PointResponse>) {
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    callback(body?.message == "hit") // Возвращаем true или false
+                } else {
+                    handleErrorResponse(response)
+                    callback(null) // Ошибка -> null
+                }
+            }
+
+            override fun onFailure(call: Call<PointResponse>, t: Throwable) {
+                showToast("Ошибка сети. Попробуйте позже.")
+                callback(null) // Ошибка сети -> null
+            }
+        })
+    }
+
+    private fun handleErrorResponse(response: Response<PointResponse>) {
+        try {
+            val errorJson = response.errorBody()?.string()
+            if (!errorJson.isNullOrEmpty()) {
+                val jsonObj = JSONObject(errorJson)
+                val errorMessage = jsonObj.getString("error")
+
+                if (errorMessage == "Неверный или истекший токен") {
+                    showToast("Сессия истекла. Пожалуйста, войдите в систему заново.")
+                    TokenManager.saveToken(this, "")
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    showToast(errorMessage)
+                }
+            } else {
+                showToast("Ошибка сервера")
+            }
+        } catch (e: Exception) {
+            showToast("Ошибка обработки ответа")
+        }
+    }
+
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

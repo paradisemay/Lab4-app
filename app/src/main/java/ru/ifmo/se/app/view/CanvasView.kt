@@ -43,7 +43,7 @@ class CanvasView @JvmOverloads constructor(
     private var stepX by Delegates.notNull<Float>()
     private var stepY by Delegates.notNull<Float>()
 
-    var graphData: GraphData = GraphData(0f, 0f, 0f)
+    var graphData: GraphData = GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
 
     // Флаг, указывающий, нужно ли отрисовывать точку
     private var showPoint: Boolean = true
@@ -53,8 +53,6 @@ class CanvasView @JvmOverloads constructor(
         centerY = height / 2f
         stepX = ((width - 100f) / 4.0).toFloat()
         stepY = ((height - 100f) / 4.0).toFloat()
-
-        Log.d("CanvasView", "centerX = $centerX, centerY = $centerY, stepX = $stepX, stepY = $stepY")
 
         super.onDraw(canvas)
         // Рисуем фигуру
@@ -71,7 +69,11 @@ class CanvasView @JvmOverloads constructor(
     }
 
     private fun drawPoint(x: Float, y: Float, canvas: Canvas) {
-        canvas.drawCircle(centerX + x, centerY - y, 20f, paint)
+        Log.d("CanvasView", "pointX = $x, pointY = $y")
+        canvas.drawCircle(centerX + x, centerY - y, 20f, Paint().apply {
+            color = graphData.status.color.toInt()
+            style = Paint.Style.FILL
+        })
     }
 
     private fun drawFigure(canvas: Canvas) {
@@ -106,25 +108,49 @@ class CanvasView @JvmOverloads constructor(
         drawArrowY(canvas)
 
         val labelLength = 20f
-        canvas.drawLine(centerX - 2 * stepX, centerY - labelLength, centerX - 2 * stepX, centerY, axisPaint)
+        canvas.drawLine(
+            centerX - 2 * stepX,
+            centerY - labelLength,
+            centerX - 2 * stepX,
+            centerY,
+            axisPaint
+        )
         canvas.drawLine(centerX - stepX, centerY - labelLength, centerX - stepX, centerY, axisPaint)
         canvas.drawLine(centerX + stepX, centerY - labelLength, centerX + stepX, centerY, axisPaint)
-        canvas.drawLine(centerX + 2 * stepX, centerY - labelLength, centerX + 2 * stepX, centerY, axisPaint)
+        canvas.drawLine(
+            centerX + 2 * stepX,
+            centerY - labelLength,
+            centerX + 2 * stepX,
+            centerY,
+            axisPaint
+        )
 
-        canvas.drawLine(centerX - labelLength, centerY - 2 * stepY, centerX, centerY - 2 * stepY, axisPaint)
+        canvas.drawLine(
+            centerX - labelLength,
+            centerY - 2 * stepY,
+            centerX,
+            centerY - 2 * stepY,
+            axisPaint
+        )
         canvas.drawLine(centerX - labelLength, centerY - stepY, centerX, centerY - stepY, axisPaint)
         canvas.drawLine(centerX - labelLength, centerY + stepY, centerX, centerY + stepY, axisPaint)
-        canvas.drawLine(centerX - labelLength, centerY + 2 * stepY, centerX, centerY + 2 * stepY, axisPaint)
+        canvas.drawLine(
+            centerX - labelLength,
+            centerY + 2 * stepY,
+            centerX,
+            centerY + 2 * stepY,
+            axisPaint
+        )
 
         canvas.drawText("-${graphData.radius}", centerX - 2 * stepX, centerY + 40f, textPaint)
         canvas.drawText("-${graphData.radius / 2f}", centerX - stepX, centerY + 40f, textPaint)
         canvas.drawText("${graphData.radius / 2f}", centerX + stepX, centerY + 40f, textPaint)
         canvas.drawText("${graphData.radius}", centerX + 2 * stepX, centerY + 40f, textPaint)
 
-        canvas.drawText("-${graphData.radius}", centerX + 40f, centerY - 2 * stepY, textPaint)
-        canvas.drawText("-${graphData.radius / 2f}", centerX + 40f, centerY - stepY, textPaint)
-        canvas.drawText("${graphData.radius / 2f}", centerX + 40f, centerY + stepY, textPaint)
-        canvas.drawText("${graphData.radius}", centerX + 40f, centerY + 2 * stepY, textPaint)
+        canvas.drawText("${graphData.radius}", centerX + 40f, centerY - 2 * stepY, textPaint)
+        canvas.drawText("${graphData.radius / 2f}", centerX + 40f, centerY - stepY, textPaint)
+        canvas.drawText("-${graphData.radius / 2f}", centerX + 40f, centerY + stepY, textPaint)
+        canvas.drawText("-${graphData.radius}", centerX + 40f, centerY + 2 * stepY, textPaint)
 
         // Подписи осей
         canvas.drawText("X", width - 40f, centerY - 40f, textPaint)

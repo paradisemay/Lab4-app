@@ -4,12 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import ru.ifmo.se.app.model.GraphData
+import ru.ifmo.se.app.view.PointStatus
 
 class ContentViewModel : ViewModel() {
 
     // Используем MutableLiveData для хранения состояния графа
     private val _graphData = MutableLiveData<GraphData>().apply {
-        value = GraphData(0f, 0f, 0f)
+        value = GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
     }
     // Экспонируем неизменяемый LiveData для наблюдения из UI
     val graphData: LiveData<GraphData> get() = _graphData
