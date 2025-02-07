@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.*
 import androidx.activity.viewModels
@@ -90,7 +91,26 @@ class ContentActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnDraw).setOnClickListener {
             val xValue = activeXButton?.text.toString().toFloatOrNull() ?: 0f
             val rValue = activeRButton?.text.toString().toFloatOrNull() ?: 0f
-            val yValue = etY.text.toString().toFloatOrNull() ?: 0f
+
+            val yText = etY.text.toString()
+            var yValue: Float? = null
+            try {
+                yValue = yText.toFloat()
+            } catch (_: NumberFormatException) {
+                etY.error = "Некорректное значение Y"
+                return@setOnClickListener
+            }
+
+            if (yValue < -3 || yValue > 3) {
+                etY.error = "Значение Y вне диапазона [-3; 3]"
+                return@setOnClickListener
+            }
+
+            if (yText.length > 4 && yText.contains('.') && yText.substring(yText.indexOf('.') + 1).length > 4) {
+                etY.error = "Много знаков после запятой"
+                return@setOnClickListener
+            }
+
             val newGraphData = GraphData(xValue, yValue, rValue)
             viewModel.updateGraph(newGraphData)
             // При нажатии на "Нарисовать" точка отобразится
@@ -107,11 +127,13 @@ class ContentActivity : AppCompatActivity() {
 
         // Обработка касания по CanvasView (графу)
         canvasView.setOnTouchListener { view, event ->
-            if (event.action == MotionEvent.ACTION_UP) {
+            if (event.action == MotionEvent.ACTION_DOWN) {
                 // Вызываем performClick для корректной работы с доступностью
                 view.performClick()
                 // Вызываем метод-заглушку onGraphTouch с координатами касания
-                canvasView.onGraphTouch(event.x, event.y)
+                val (xPoint, yPoint) = canvasView.onGraphTouch(event.x, event.y)
+                viewModel.updateGraph(GraphData(xPoint, yPoint, activeRButton?.text.toString().toFloatOrNull() ?: 1f))
+                canvasView.setShowPoint(true)
                 true
             } else {
                 false

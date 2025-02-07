@@ -164,8 +164,10 @@ class CanvasView @JvmOverloads constructor(
 
     // Метод-заглушка для обработки касания по графу.
     // Принимает координаты нажатия (x, y) и может быть дополнен логикой в будущем.
-    fun onGraphTouch(x: Float, y: Float) {
-
+    fun onGraphTouch(x: Float, y: Float): Pair<Float, Float> {
+        val pointX = (x - centerX) * graphData.radius / (2 * stepX)
+        val pointY = (centerY - y) * graphData.radius / (2 * stepY)
+        return Pair(pointX, pointY)
     }
 
     // Переопределяем performClick для целей доступности.
