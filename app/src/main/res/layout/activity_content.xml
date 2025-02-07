@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     tools:context=".activities.ContentActivity">
 
     <ScrollView
@@ -11,53 +13,279 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Секция для рисования -->
-            <view class="ru.ifmo.se.app.view.CanvasView"
-            android:id="@+id/canvasView"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"/>
+            <Button
+                android:id="@+id/logout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:background="@drawable/rounded_button"
+                android:backgroundTint="#800000"
+                android:elevation="2dp"
+                android:text="Выйти"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:typeface="serif" />
 
-            <!-- Форма с полями X, Y, R -->
-            <EditText
-                android:id="@+id/etX"
+            <!-- Секция для рисования -->
+            <view
+                android:id="@+id/canvasView"
+                class="ru.ifmo.se.app.view.CanvasView"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="16dp" />
+
+            <!-- Выбор X координаты -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="X координата"
+                android:textColor="#000000"
+                android:textSize="16sp" />
+
+            <GridLayout
+                android:id="@+id/gridX"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="X координата"
-                android:inputType="numberDecimal"/>
+                android:layout_marginTop="8dp"
+                android:columnCount="3">
 
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_2"
+                    android:text="-2"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_1_5"
+                    android:text="-1.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_1"
+                    android:text="-1"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_0_5"
+                    android:text="-0.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_0"
+                    android:text="0"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#800000"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#ffffff"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_0_5_pos"
+                    android:text="0.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_1_pos"
+                    android:text="1"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_1_5_pos"
+                    android:text="1.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnX_2_pos"
+                    android:text="2"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+            </GridLayout>
+
+            <!-- Поле для ввода Y -->
             <EditText
                 android:id="@+id/etY"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_input"
                 android:hint="Y координата"
-                android:inputType="numberDecimal"/>
+                android:inputType="numberDecimal"
+                android:text="0"
+                android:textColor="#000000"
+                android:textSize="16sp" />
 
-            <EditText
-                android:id="@+id/etR"
+            <!-- Выбор R -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Радиус"
+                android:textColor="#000000"
+                android:textSize="16sp" />
+
+            <GridLayout
+                android:id="@+id/gridR"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Радиус"
-                android:inputType="numberDecimal"/>
+                android:layout_marginTop="8dp"
+                android:columnCount="3">
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_0_5"
+                    android:text="0.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_1"
+                    android:text="1"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#800000"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#ffffff"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_1_5"
+                    android:text="1.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_2"
+                    android:text="2"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_2_5"
+                    android:text="2.5"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+
+                <Button
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btnR_3"
+                    android:text="3"
+                    android:background="@drawable/rounded_button"
+                    android:backgroundTint="#F5F5F5"
+                    android:elevation="2dp"
+                    android:typeface="serif"
+                    android:textColor="#000000"
+                    android:layout_margin="5dp" />
+            </GridLayout>
 
             <Button
                 android:id="@+id/btnDraw"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Нарисовать"/>
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_button"
+                android:backgroundTint="#F5F5F5"
+                android:elevation="2dp"
+                android:text="Нарисовать"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:typeface="serif" />
 
             <!-- Таблица -->
             <TableLayout
                 android:id="@+id/tableLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:stretchColumns="1"
-                android:paddingTop="16dp"/>
-
+                android:paddingTop="16dp"
+                android:stretchColumns="1" />
         </LinearLayout>
 
     </ScrollView>

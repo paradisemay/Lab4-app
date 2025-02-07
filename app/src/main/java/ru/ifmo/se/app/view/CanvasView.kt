@@ -22,6 +22,7 @@ class CanvasView @JvmOverloads constructor(
     }
 
     private val figurePaint = Paint().apply {
+        // Цвет в формате ARGB (например, прозрачный синий)
         color = 0x6F34ebdb
         style = Paint.Style.FILL
     }
@@ -44,11 +45,14 @@ class CanvasView @JvmOverloads constructor(
 
     var graphData: GraphData = GraphData(0f, 0f, 0f)
 
+    // Флаг, указывающий, нужно ли отрисовывать точку
+    private var showPoint: Boolean = true
+
     override fun onDraw(canvas: Canvas) {
         centerX = width / 2f
         centerY = height / 2f
-        stepX = (((width - 100f)) / 4.0).toFloat()
-        stepY = (((height - 100f)) / 4.0).toFloat()
+        stepX = ((width - 100f) / 4.0).toFloat()
+        stepY = ((height - 100f) / 4.0).toFloat()
 
         Log.d("CanvasView", "centerX = $centerX, centerY = $centerY, stepX = $stepX, stepY = $stepY")
 
@@ -58,10 +62,12 @@ class CanvasView @JvmOverloads constructor(
         // Рисуем оси координат
         drawAxes(canvas)
 
-        // Рисуем точку
-        val x = graphData.x / graphData.radius * (2 * stepX)
-        val y = graphData.y / graphData.radius * (2 * stepY)
-        drawPoint(x, y, canvas)
+        // Отрисовываем точку только если showPoint равен true и радиус не равен нулю
+        if (showPoint && graphData.radius != 0f) {
+            val pointX = graphData.x / graphData.radius * (2 * stepX)
+            val pointY = graphData.y / graphData.radius * (2 * stepY)
+            drawPoint(pointX, pointY, canvas)
+        }
     }
 
     private fun drawPoint(x: Float, y: Float, canvas: Canvas) {
@@ -70,9 +76,16 @@ class CanvasView @JvmOverloads constructor(
 
     private fun drawFigure(canvas: Canvas) {
         canvas.drawRect(centerX, centerY - 2 * stepY, centerX + stepX, centerY, figurePaint)
-
-        canvas.drawArc(centerX - 2 * stepX, centerY - 2 * stepY, centerX + 2 * stepX, centerY + 2 * stepY, 90f, 90f, true, figurePaint)
-
+        canvas.drawArc(
+            centerX - 2 * stepX,
+            centerY - 2 * stepY,
+            centerX + 2 * stepX,
+            centerY + 2 * stepY,
+            90f,
+            90f,
+            true,
+            figurePaint
+        )
         val path = Path()
         path.moveTo(centerX, centerY)
         path.lineTo(centerX, centerY - stepY)
@@ -83,27 +96,25 @@ class CanvasView @JvmOverloads constructor(
     }
 
     private fun drawAxes(canvas: Canvas) {
-        // Рисуем горизонтальную ось
+        // Горизонтальная ось
         canvas.drawLine(0f, centerY, width.toFloat(), centerY, axisPaint)
-
-        // Рисуем вертикальную ось
+        // Вертикальная ось
         canvas.drawLine(centerX, 0f, centerX, height.toFloat(), axisPaint)
 
-        // Рисуем стрелку на горизонтальной оси (ось X) - направлена вправо
+        // Стрелки на осях
         drawArrowX(canvas)
-        // Рисуем стрелку на вертикальной оси (ось Y) - направлена вверх
         drawArrowY(canvas)
 
-        val labelLenght = 20f
-        canvas.drawLine(centerX - 2 * stepX, centerY - labelLenght, centerX - 2 * stepX, centerY, axisPaint)
-        canvas.drawLine(centerX - stepX, centerY - labelLenght, centerX - stepX, centerY, axisPaint)
-        canvas.drawLine(centerX + stepX, centerY - labelLenght, centerX + stepX, centerY, axisPaint)
-        canvas.drawLine(centerX + 2 * stepX, centerY - labelLenght, centerX + 2 * stepX, centerY, axisPaint)
+        val labelLength = 20f
+        canvas.drawLine(centerX - 2 * stepX, centerY - labelLength, centerX - 2 * stepX, centerY, axisPaint)
+        canvas.drawLine(centerX - stepX, centerY - labelLength, centerX - stepX, centerY, axisPaint)
+        canvas.drawLine(centerX + stepX, centerY - labelLength, centerX + stepX, centerY, axisPaint)
+        canvas.drawLine(centerX + 2 * stepX, centerY - labelLength, centerX + 2 * stepX, centerY, axisPaint)
 
-        canvas.drawLine(centerX - labelLenght, centerY - 2 * stepY, centerX, centerY - 2 * stepY, axisPaint)
-        canvas.drawLine(centerX - labelLenght, centerY - stepY, centerX, centerY - stepY, axisPaint)
-        canvas.drawLine(centerX - labelLenght, centerY + stepY, centerX, centerY + stepY, axisPaint)
-        canvas.drawLine(centerX - labelLenght, centerY + 2 * stepY, centerX, centerY + 2 * stepY, axisPaint)
+        canvas.drawLine(centerX - labelLength, centerY - 2 * stepY, centerX, centerY - 2 * stepY, axisPaint)
+        canvas.drawLine(centerX - labelLength, centerY - stepY, centerX, centerY - stepY, axisPaint)
+        canvas.drawLine(centerX - labelLength, centerY + stepY, centerX, centerY + stepY, axisPaint)
+        canvas.drawLine(centerX - labelLength, centerY + 2 * stepY, centerX, centerY + 2 * stepY, axisPaint)
 
         canvas.drawText("-${graphData.radius}", centerX - 2 * stepX, centerY + 40f, textPaint)
         canvas.drawText("-${graphData.radius / 2f}", centerX - stepX, centerY + 40f, textPaint)
@@ -115,20 +126,16 @@ class CanvasView @JvmOverloads constructor(
         canvas.drawText("${graphData.radius / 2f}", centerX + 40f, centerY + stepY, textPaint)
         canvas.drawText("${graphData.radius}", centerX + 40f, centerY + 2 * stepY, textPaint)
 
-
-        // Рисуем надписи X и Y
-        canvas.drawText("X", width - 40f, centerY - 40f, textPaint) // Надпись для оси X
-        canvas.drawText("Y", centerX + 40f, 40f, textPaint) // Надпись для оси Y
+        // Подписи осей
+        canvas.drawText("X", width - 40f, centerY - 40f, textPaint)
+        canvas.drawText("Y", centerX + 40f, 40f, textPaint)
     }
 
     private fun drawArrowX(canvas: Canvas) {
         val cornerX = width.toFloat()
         val cornerY = height / 2f
         val arrowLength = 20f
-
-        val sq2 = Math.sqrt(2.0).toFloat()
-        val dArrowLength = arrowLength / sq2
-
+        val dArrowLength = arrowLength / Math.sqrt(2.0).toFloat()
         canvas.drawLine(cornerX, cornerY, cornerX - dArrowLength, cornerY - dArrowLength, axisPaint)
         canvas.drawLine(cornerX, cornerY, cornerX - dArrowLength, cornerY + dArrowLength, axisPaint)
     }
@@ -137,17 +144,33 @@ class CanvasView @JvmOverloads constructor(
         val cornerX = width / 2f
         val cornerY = 0f
         val arrowLength = 20f
-
-        val sq2 = Math.sqrt(2.0).toFloat()
-        val dArrowLength = arrowLength / sq2
-
+        val dArrowLength = arrowLength / Math.sqrt(2.0).toFloat()
         canvas.drawLine(cornerX, cornerY, cornerX - dArrowLength, cornerY + dArrowLength, axisPaint)
         canvas.drawLine(cornerX, cornerY, cornerX + dArrowLength, cornerY + dArrowLength, axisPaint)
     }
 
-
+    // Обновление данных графа и перерисовка View
     fun updateGraphData(newData: GraphData) {
         graphData = newData
-        invalidate() // Перерисовываем канвас
+        invalidate()
+    }
+
+    // Управление отрисовкой точки:
+    // Если show = true, точка отрисовывается; если false – пропускается.
+    fun setShowPoint(show: Boolean) {
+        showPoint = show
+        invalidate()
+    }
+
+    // Метод-заглушка для обработки касания по графу.
+    // Принимает координаты нажатия (x, y) и может быть дополнен логикой в будущем.
+    fun onGraphTouch(x: Float, y: Float) {
+
+    }
+
+    // Переопределяем performClick для целей доступности.
+    override fun performClick(): Boolean {
+        // Вызываем базовую реализацию (например, для генерации событий доступности)
+        return super.performClick()
     }
 }
