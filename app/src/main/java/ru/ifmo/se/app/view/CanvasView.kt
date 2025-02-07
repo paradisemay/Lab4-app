@@ -61,7 +61,7 @@ class CanvasView @JvmOverloads constructor(
 
         // Отрисовываем точки из истории с учетом текущего радиуса (graphData.radius)
         for (point in historyPoints) {
-            if (point.x != 0f || point.y != 0f) {
+            if (point.radius != 0f) {
                 val screenX = point.x / graphData.radius * (2 * stepX)
                 val screenY = point.y / graphData.radius * (2 * stepY)
                 // Если радиус точки совпадает с текущим, используем её статус,

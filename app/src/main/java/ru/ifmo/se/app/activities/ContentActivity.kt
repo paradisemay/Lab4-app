@@ -169,8 +169,6 @@ class ContentActivity : AppCompatActivity() {
             }
         }
 
-
-
         // Обработка кнопки "Очистить историю" (btnClear)
         findViewById<Button>(R.id.btnClear).setOnClickListener {
             val client = OkHttpClient.Builder()
@@ -193,6 +191,8 @@ class ContentActivity : AppCompatActivity() {
                         // Очищаем локальную историю: холст и таблица
                         canvasView.updateHistoryPoints(emptyList())
                         tableLayout.removeAllViews()
+                        // Выводим надпись "История отсутствует"
+                        showNoHistoryMessage()
                         // Выводим тост с сообщением из ответа
                         val toastMessage = response.body()?.message ?: "История очищена"
                         showToast(toastMessage)
@@ -210,8 +210,7 @@ class ContentActivity : AppCompatActivity() {
         // Загрузка истории через API (обновляет таблицу и холст)
         updateTable()
 
-
-        // При первом открытии отправляем значение r из выбранной по умолчанию кнопки (без точки)
+        // При первом открытии Activity обновляем граф с выбранным значением R (без точки)
         updateGraphWithDefaultR()
     }
 
