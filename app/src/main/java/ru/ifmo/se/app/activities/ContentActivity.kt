@@ -282,6 +282,11 @@ class ContentActivity : AppCompatActivity() {
     private fun updateTableWithData(history: List<ResultResponse>) {
         tableLayout.removeAllViews()
 
+        // Сортируем историю по времени по возрастанию
+        val sortedHistory = history.sortedBy { it.time }
+        // Для таблицы берем 10 последних точек (самые свежие)
+        val tableHistory = if (sortedHistory.size > 10) sortedHistory.takeLast(10) else sortedHistory
+
         // Заголовки таблицы
         val headerRow = TableRow(this)
         val headers = listOf("Время", "X", "Y", "R", "Результат")
@@ -297,9 +302,9 @@ class ContentActivity : AppCompatActivity() {
         tableLayout.addView(headerRow)
 
         val dateFormat = SimpleDateFormat("HH:mm d MMM", Locale.getDefault())
-        val historyPointsList = mutableListOf<GraphData>()
 
-        for (point in history) {
+        // Заполняем таблицу только данными из tableHistory
+        for (point in tableHistory) {
             val row = TableRow(this)
             val formattedTime = dateFormat.format(Date(point.time))
             val values = listOf(
@@ -320,14 +325,14 @@ class ContentActivity : AppCompatActivity() {
                 row.addView(textView)
             }
             tableLayout.addView(row)
-
-            // Формируем список точек для холста
-            val status = if (point.result == "hit") PointStatus.HIT else PointStatus.MISS
-            historyPointsList.add(GraphData(point.x, point.y, point.r, status))
         }
 
-        // Обновляем холст: отображаем точки из истории
-        canvasView.updateHistoryPoints(historyPointsList)
+        // Для холста нужно передать ВСЮ историю (отсортированную по времени)
+        val canvasHistoryList = sortedHistory.map { point ->
+            val status = if (point.result == "hit") PointStatus.HIT else PointStatus.MISS
+            GraphData(point.x, point.y, point.r, status)
+        }
+        canvasView.updateHistoryPoints(canvasHistoryList)
     }
 
     private fun showNoHistoryMessage() {
