@@ -16,11 +16,6 @@ class CanvasView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    private val paint = Paint().apply {
-        color = Color.RED
-        style = Paint.Style.FILL
-    }
-
     private val figurePaint = Paint().apply {
         // Цвет в формате ARGB (например, прозрачный синий)
         color = 0x6F34ebdb
@@ -43,10 +38,14 @@ class CanvasView @JvmOverloads constructor(
     private var stepX by Delegates.notNull<Float>()
     private var stepY by Delegates.notNull<Float>()
 
+    // Текущие данные (например, для текущей точки и текущего радиуса)
     var graphData: GraphData = GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
 
-    // Флаг, указывающий, нужно ли отрисовывать точку
+    // Флаг, управляющий отрисовкой текущей точки
     private var showPoint: Boolean = true
+
+    // Список точек из истории
+    private val historyPoints = mutableListOf<GraphData>()
 
     override fun onDraw(canvas: Canvas) {
         centerX = width / 2f
@@ -55,23 +54,35 @@ class CanvasView @JvmOverloads constructor(
         stepY = ((height - 100f) / 4.0).toFloat()
 
         super.onDraw(canvas)
-        // Рисуем фигуру
+
+        // Рисуем фигуру и оси
         drawFigure(canvas)
-        // Рисуем оси координат
         drawAxes(canvas)
 
-        // Отрисовываем точку только если showPoint равен true и радиус не равен нулю
+        // Отрисовываем точки из истории с учетом текущего радиуса (graphData.radius)
+        for (point in historyPoints) {
+            if (point.x != 0f || point.y != 0f) {
+                val screenX = point.x / graphData.radius * (2 * stepX)
+                val screenY = point.y / graphData.radius * (2 * stepY)
+                // Если радиус точки совпадает с текущим, используем её статус,
+                // иначе считаем статус UNKNOWN (например, серым)
+                val drawStatus = if (point.radius == graphData.radius) point.status else PointStatus.UNKNOWN
+                drawPoint(screenX, screenY, canvas, drawStatus.color.toInt())
+            }
+        }
+
+        // Отрисовываем текущую точку (она всегда рисуется по текущему радиусу)
         if (showPoint && graphData.radius != 0f) {
-            val pointX = graphData.x / graphData.radius * (2 * stepX)
-            val pointY = graphData.y / graphData.radius * (2 * stepY)
-            drawPoint(pointX, pointY, canvas)
+            val screenX = graphData.x / graphData.radius * (2 * stepX)
+            val screenY = graphData.y / graphData.radius * (2 * stepY)
+            drawPoint(screenX, screenY, canvas, graphData.status.color.toInt())
         }
     }
 
-    private fun drawPoint(x: Float, y: Float, canvas: Canvas) {
+    private fun drawPoint(x: Float, y: Float, canvas: Canvas, color: Int) {
         Log.d("CanvasView", "pointX = $x, pointY = $y")
         canvas.drawCircle(centerX + x, centerY - y, 20f, Paint().apply {
-            color = graphData.status.color.toInt()
+            this.color = color
             style = Paint.Style.FILL
         })
     }
@@ -142,6 +153,7 @@ class CanvasView @JvmOverloads constructor(
             axisPaint
         )
 
+        // Подписи осей с учетом текущего радиуса
         canvas.drawText("-${graphData.radius}", centerX - 2 * stepX, centerY + 40f, textPaint)
         canvas.drawText("-${graphData.radius / 2f}", centerX - stepX, centerY + 40f, textPaint)
         canvas.drawText("${graphData.radius / 2f}", centerX + stepX, centerY + 40f, textPaint)
@@ -175,30 +187,39 @@ class CanvasView @JvmOverloads constructor(
         canvas.drawLine(cornerX, cornerY, cornerX + dArrowLength, cornerY + dArrowLength, axisPaint)
     }
 
-    // Обновление данных графа и перерисовка View
+    // Обновление данных графа и перерисовка холста
     fun updateGraphData(newData: GraphData) {
         graphData = newData
         invalidate()
     }
 
-    // Управление отрисовкой точки:
-    // Если show = true, точка отрисовывается; если false – пропускается.
+    // Управление отрисовкой текущей точки
     fun setShowPoint(show: Boolean) {
         showPoint = show
         invalidate()
     }
 
-    // Метод-заглушка для обработки касания по графу.
-    // Принимает координаты нажатия (x, y) и может быть дополнен логикой в будущем.
+    // Метод для обработки касания по холсту
     fun onGraphTouch(x: Float, y: Float): Pair<Float, Float> {
         val pointX = (x - centerX) * graphData.radius / (2 * stepX)
         val pointY = (centerY - y) * graphData.radius / (2 * stepY)
         return Pair(pointX, pointY)
     }
 
-    // Переопределяем performClick для целей доступности.
+    // Метод для добавления новой точки в историю и перерисовки холста
+    fun addHistoryPoint(point: GraphData) {
+        historyPoints.add(point)
+        invalidate()
+    }
+
+    // Метод для обновления списка точек истории (например, при загрузке истории с сервера)
+    fun updateHistoryPoints(points: List<GraphData>) {
+        historyPoints.clear()
+        historyPoints.addAll(points)
+        invalidate()
+    }
+
     override fun performClick(): Boolean {
-        // Вызываем базовую реализацию (например, для генерации событий доступности)
         return super.performClick()
     }
 }

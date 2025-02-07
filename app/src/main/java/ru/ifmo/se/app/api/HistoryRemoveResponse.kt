@@ -1,4 +1,5 @@
 package ru.ifmo.se.app.api
 
-class HistoryRemoveResponse {
-}
+data class HistoryRemoveResponse(
+    val message: String
+)

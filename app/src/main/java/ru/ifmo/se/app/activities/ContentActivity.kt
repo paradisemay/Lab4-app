@@ -64,7 +64,7 @@ class ContentActivity : AppCompatActivity() {
             setTextColor(Color.parseColor("#FFFFFF"))
         }
 
-        // Назначаем обработчики кликов для всех кнопок выбора X
+        // Обработчики кликов для кнопок X
         val xButtons = listOf<Button>(
             findViewById(R.id.btnX_2),
             findViewById(R.id.btnX_1_5),
@@ -82,7 +82,7 @@ class ContentActivity : AppCompatActivity() {
             }
         }
 
-        // Назначаем обработчики кликов для всех кнопок выбора R
+        // Обработчики кликов для кнопок R
         val rButtons = listOf<Button>(
             findViewById(R.id.btnR_0_5),
             findViewById(R.id.btnR_1),
@@ -97,9 +97,9 @@ class ContentActivity : AppCompatActivity() {
             }
         }
 
-        // Подписываемся на изменения LiveData из ViewModel
+        // Подписка на изменения LiveData из ViewModel
         viewModel.graphData.observe(this) { newGraphData ->
-            // Обновляем CanvasView и таблицу при изменении данных
+            // Обновляем холст и таблицу при изменении данных
             canvasView.updateGraphData(newGraphData)
             updateTable()
         }
@@ -130,13 +130,11 @@ class ContentActivity : AppCompatActivity() {
 
             checkPoint(xValue, yValue, rValue) { result ->
                 result?.let { hit ->
-                    if (hit) {
-                        viewModel.updateGraph(GraphData(xValue, yValue, rValue, PointStatus.HIT))
-                        canvasView.setShowPoint(true)
-                    } else {
-                        viewModel.updateGraph(GraphData(xValue, yValue, rValue, PointStatus.MISS))
-                        canvasView.setShowPoint(true)
-                    }
+                    val status = if (hit) PointStatus.HIT else PointStatus.MISS
+                    val newPoint = GraphData(xValue, yValue, rValue, status)
+                    viewModel.updateGraph(newPoint)
+                    // Добавляем точку в историю холста
+                    canvasView.addHistoryPoint(newPoint)
                 }
             }
         }
@@ -152,21 +150,16 @@ class ContentActivity : AppCompatActivity() {
         // Обработка касания по CanvasView (графу)
         canvasView.setOnTouchListener { view, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
-                // Вызываем performClick для корректной работы с доступностью
                 view.performClick()
-                // Вызываем метод-заглушку onGraphTouch с координатами касания
                 val (xPoint, yPoint) = canvasView.onGraphTouch(event.x, event.y)
                 val rPoint = activeRButton?.text.toString().toFloatOrNull() ?: 1f
 
                 checkPoint(xPoint, yPoint, rPoint) { result ->
                     result?.let { hit ->
-                        if (hit) {
-                            viewModel.updateGraph(GraphData(xPoint, yPoint, rPoint, PointStatus.HIT))
-                            canvasView.setShowPoint(true)
-                        } else {
-                            viewModel.updateGraph(GraphData(xPoint, yPoint, rPoint, PointStatus.MISS))
-                            canvasView.setShowPoint(true)
-                        }
+                        val status = if (hit) PointStatus.HIT else PointStatus.MISS
+                        val newPoint = GraphData(xPoint, yPoint, rPoint, status)
+                        viewModel.updateGraph(newPoint)
+                        canvasView.addHistoryPoint(newPoint)
                     }
                 }
                 true
@@ -179,7 +172,7 @@ class ContentActivity : AppCompatActivity() {
         updateGraphWithDefaultR()
     }
 
-    // Метод для обновления активной кнопки для группы X
+    // Метод для обновления активной кнопки группы X
     private fun setActiveX(selectedButton: Button) {
         activeXButton?.apply {
             backgroundTintList = ColorStateList.valueOf(Color.parseColor("#F5F5F5"))
@@ -190,9 +183,7 @@ class ContentActivity : AppCompatActivity() {
         activeXButton = selectedButton
     }
 
-    // Метод для обновления активной кнопки для группы R.
-    // При нажатии обновляется только радиус (сохранены текущие x и y),
-    // а CanvasView обновляется без отрисовки точки (только подписи обновляются).
+    // Метод для обновления активной кнопки группы R
     private fun setActiveR(selectedButton: Button) {
         activeRButton?.apply {
             backgroundTintList = ColorStateList.valueOf(Color.parseColor("#F5F5F5"))
@@ -202,16 +193,16 @@ class ContentActivity : AppCompatActivity() {
         selectedButton.setTextColor(Color.parseColor("#FFFFFF"))
         activeRButton = selectedButton
 
-        // Обновляем данные графа: сохраняем текущие x и y, а радиус берём из выбранной кнопки
         val newRadius = selectedButton.text.toString().toFloatOrNull() ?: 0f
         val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
         val updatedGraphData = GraphData(currentGraphData.x, currentGraphData.y, newRadius, currentGraphData.status)
         viewModel.updateGraph(updatedGraphData)
 
-        // Обновляем CanvasView без отрисовки точки – обновятся только подписи и оси
+        // Обновляем холст (без отображения текущей точки, только оси и подписи)
         canvasView.setShowPoint(false)
     }
 
+    // Загрузка истории через API и обновление таблицы и холста
     private fun updateTable() {
         val client = OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(this))
@@ -263,14 +254,12 @@ class ContentActivity : AppCompatActivity() {
         }
         tableLayout.addView(headerRow)
 
-        // Данные истории
         val dateFormat = SimpleDateFormat("HH:mm d MMM", Locale.getDefault())
+        val historyPointsList = mutableListOf<GraphData>()
 
         for (point in history) {
             val row = TableRow(this)
-
             val formattedTime = dateFormat.format(Date(point.time))
-
             val values = listOf(
                 formattedTime,
                 String.format("%.2f", point.x),
@@ -288,14 +277,19 @@ class ContentActivity : AppCompatActivity() {
                 }
                 row.addView(textView)
             }
-
             tableLayout.addView(row)
+
+            // Формируем список точек для холста
+            val status = if (point.result == "hit") PointStatus.HIT else PointStatus.MISS
+            historyPointsList.add(GraphData(point.x, point.y, point.r, status))
         }
+
+        // Обновляем холст: отображаем точки из истории
+        canvasView.updateHistoryPoints(historyPointsList)
     }
 
     private fun showNoHistoryMessage() {
         tableLayout.removeAllViews()
-
         val textView = TextView(this).apply {
             text = "История отсутствует"
             textSize = 18f
@@ -303,13 +297,10 @@ class ContentActivity : AppCompatActivity() {
             setPadding(16, 16, 16, 16)
             gravity = Gravity.CENTER
         }
-
         tableLayout.addView(textView)
     }
 
-
-    // Метод для отправки значения r при первом открытии Activity.
-    // Обновляем данные графа, оставляя x и y без изменений, и не отрисовываем точку.
+    // При первом открытии Activity обновляем граф с выбранным значением R (без точки)
     private fun updateGraphWithDefaultR() {
         val defaultR = activeRButton?.text.toString().toFloatOrNull() ?: 0f
         val currentGraphData = viewModel.graphData.value ?: GraphData(0f, 0f, 0f, PointStatus.UNKNOWN)
@@ -318,7 +309,7 @@ class ContentActivity : AppCompatActivity() {
         canvasView.setShowPoint(false)
     }
 
-    private fun checkPoint(x: Float, y: Float, r: Float, callback: (Boolean?) -> Unit){
+    private fun checkPoint(x: Float, y: Float, r: Float, callback: (Boolean?) -> Unit) {
         val client = OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(this))
             .build()
@@ -336,16 +327,16 @@ class ContentActivity : AppCompatActivity() {
             override fun onResponse(call: Call<PointResponse>, response: Response<PointResponse>) {
                 if (response.isSuccessful) {
                     val body = response.body()
-                    callback(body?.message == "hit") // Возвращаем true или false
+                    callback(body?.message == "hit")
                 } else {
                     handleErrorResponse(response)
-                    callback(null) // Ошибка -> null
+                    callback(null)
                 }
             }
 
             override fun onFailure(call: Call<PointResponse>, t: Throwable) {
                 showToast("Ошибка сети. Попробуйте позже.")
-                callback(null) // Ошибка сети -> null
+                callback(null)
             }
         })
     }
@@ -356,7 +347,6 @@ class ContentActivity : AppCompatActivity() {
             if (!errorJson.isNullOrEmpty()) {
                 val jsonObj = JSONObject(errorJson)
                 val errorMessage = jsonObj.getString("error")
-
                 if (errorMessage == "Неверный или истекший токен") {
                     showToast("Сессия истекла. Пожалуйста, войдите в систему заново.")
                     TokenManager.saveToken(this, "")
@@ -373,7 +363,6 @@ class ContentActivity : AppCompatActivity() {
             showToast("Ошибка обработки ответа")
         }
     }
-
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

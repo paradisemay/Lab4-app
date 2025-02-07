@@ -299,6 +299,19 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="16dp"
                 android:stretchColumns="1" />
+
+            <Button
+                android:id="@+id/btnClear"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_button"
+                android:backgroundTint="#800000"
+                android:elevation="2dp"
+                android:text="Очистить"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:typeface="serif" />
         </LinearLayout>
 
     </ScrollView>
