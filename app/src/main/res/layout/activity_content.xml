@@ -309,7 +309,7 @@
                 android:backgroundTint="#800000"
                 android:elevation="2dp"
                 android:text="Очистить"
-                android:textColor="#000000"
+                android:textColor="#ffffff"
                 android:textSize="18sp"
                 android:typeface="serif" />
         </LinearLayout>

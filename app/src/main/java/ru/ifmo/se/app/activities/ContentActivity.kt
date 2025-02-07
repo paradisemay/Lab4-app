@@ -19,6 +19,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.ifmo.se.app.R
 import ru.ifmo.se.app.api.ApiService
+import ru.ifmo.se.app.api.HistoryRemoveResponse
 import ru.ifmo.se.app.api.PointRequest
 import ru.ifmo.se.app.api.PointResponse
 import ru.ifmo.se.app.api.ResultResponse
@@ -167,6 +168,48 @@ class ContentActivity : AppCompatActivity() {
                 false
             }
         }
+
+
+
+        // Обработка кнопки "Очистить историю" (btnClear)
+        findViewById<Button>(R.id.btnClear).setOnClickListener {
+            val client = OkHttpClient.Builder()
+                .addInterceptor(AuthInterceptor(this))
+                .build()
+
+            val retrofit = Retrofit.Builder()
+                .baseUrl("http://45.134.12.67:8080/server2-1.0-SNAPSHOT/api/")
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val apiService = retrofit.create(ApiService::class.java)
+            apiService.removeHistory().enqueue(object : Callback<HistoryRemoveResponse> {
+                override fun onResponse(
+                    call: Call<HistoryRemoveResponse>,
+                    response: Response<HistoryRemoveResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        // Очищаем локальную историю: холст и таблица
+                        canvasView.updateHistoryPoints(emptyList())
+                        tableLayout.removeAllViews()
+                        // Выводим тост с сообщением из ответа
+                        val toastMessage = response.body()?.message ?: "История очищена"
+                        showToast(toastMessage)
+                    } else {
+                        handleErrorResponse(response)
+                    }
+                }
+
+                override fun onFailure(call: Call<HistoryRemoveResponse>, t: Throwable) {
+                    showToast("Ошибка сети. Попробуйте позже.")
+                }
+            })
+        }
+
+        // Загрузка истории через API (обновляет таблицу и холст)
+        updateTable()
+
 
         // При первом открытии отправляем значение r из выбранной по умолчанию кнопки (без точки)
         updateGraphWithDefaultR()
