@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.MotionEvent
 import android.widget.*
 import androidx.activity.viewModels
@@ -20,12 +21,16 @@ import ru.ifmo.se.app.R
 import ru.ifmo.se.app.api.ApiService
 import ru.ifmo.se.app.api.PointRequest
 import ru.ifmo.se.app.api.PointResponse
+import ru.ifmo.se.app.api.ResultResponse
 import ru.ifmo.se.app.model.GraphData
 import ru.ifmo.se.app.util.AuthInterceptor
 import ru.ifmo.se.app.util.TokenManager
 import ru.ifmo.se.app.viewmodel.ContentViewModel
 import ru.ifmo.se.app.view.CanvasView
 import ru.ifmo.se.app.view.PointStatus
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ContentActivity : AppCompatActivity() {
 
@@ -96,7 +101,7 @@ class ContentActivity : AppCompatActivity() {
         viewModel.graphData.observe(this) { newGraphData ->
             // Обновляем CanvasView и таблицу при изменении данных
             canvasView.updateGraphData(newGraphData)
-            updateTable(newGraphData)
+            updateTable()
         }
 
         // Обработка нажатия кнопки "Нарисовать"
@@ -207,24 +212,101 @@ class ContentActivity : AppCompatActivity() {
         canvasView.setShowPoint(false)
     }
 
-    // Метод для обновления таблицы с данными на основе нового состояния графа
-    private fun updateTable(graphData: GraphData) {
-        tableLayout.removeAllViews()
-        val data = listOf(
-            listOf("X", "Y", "Radius"),
-            listOf(graphData.x.toString(), graphData.y.toString(), graphData.radius.toString())
-        )
-        for (row in data) {
-            val tableRow = TableRow(this)
-            for (cell in row) {
-                val textView = TextView(this)
-                textView.text = cell
-                textView.setPadding(8, 8, 8, 8)
-                tableRow.addView(textView)
+    private fun updateTable() {
+        val client = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(this))
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://45.134.12.67:8080/server2-1.0-SNAPSHOT/api/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val apiService = retrofit.create(ApiService::class.java)
+
+        apiService.getHistory().enqueue(object : Callback<List<ResultResponse>> {
+            override fun onResponse(call: Call<List<ResultResponse>>, response: Response<List<ResultResponse>>) {
+                if (response.isSuccessful) {
+                    val history = response.body()
+                    if (history.isNullOrEmpty()) {
+                        showNoHistoryMessage()
+                    } else {
+                        updateTableWithData(history)
+                    }
+                } else {
+                    handleErrorResponse(response)
+                }
             }
-            tableLayout.addView(tableRow)
+
+            override fun onFailure(call: Call<List<ResultResponse>>, t: Throwable) {
+                Log.e("NetworkError", "Error: ${t.message}")
+                showToast("Ошибка сети. Попробуйте позже.")
+            }
+        })
+    }
+
+    private fun updateTableWithData(history: List<ResultResponse>) {
+        tableLayout.removeAllViews()
+
+        // Заголовки таблицы
+        val headerRow = TableRow(this)
+        val headers = listOf("Время", "X", "Y", "R", "Результат")
+        for (header in headers) {
+            val textView = TextView(this).apply {
+                text = header
+                setPadding(16, 8, 16, 8)
+                setTextColor(Color.BLACK)
+                textSize = 16f
+            }
+            headerRow.addView(textView)
+        }
+        tableLayout.addView(headerRow)
+
+        // Данные истории
+        val dateFormat = SimpleDateFormat("HH:mm d MMM", Locale.getDefault())
+
+        for (point in history) {
+            val row = TableRow(this)
+
+            val formattedTime = dateFormat.format(Date(point.time))
+
+            val values = listOf(
+                formattedTime,
+                String.format("%.2f", point.x),
+                String.format("%.2f", point.y),
+                String.format("%.1f", point.r),
+                if (point.result == "hit") "Попадание" else "Мимо"
+            )
+
+            for (value in values) {
+                val textView = TextView(this).apply {
+                    text = value
+                    setPadding(16, 8, 16, 8)
+                    setTextColor(Color.DKGRAY)
+                    textSize = 14f
+                }
+                row.addView(textView)
+            }
+
+            tableLayout.addView(row)
         }
     }
+
+    private fun showNoHistoryMessage() {
+        tableLayout.removeAllViews()
+
+        val textView = TextView(this).apply {
+            text = "История отсутствует"
+            textSize = 18f
+            setTextColor(Color.GRAY)
+            setPadding(16, 16, 16, 16)
+            gravity = Gravity.CENTER
+        }
+
+        tableLayout.addView(textView)
+    }
+
 
     // Метод для отправки значения r при первом открытии Activity.
     // Обновляем данные графа, оставляя x и y без изменений, и не отрисовываем точку.
@@ -268,7 +350,7 @@ class ContentActivity : AppCompatActivity() {
         })
     }
 
-    private fun handleErrorResponse(response: Response<PointResponse>) {
+    private fun handleErrorResponse(response: Response<*>) {
         try {
             val errorJson = response.errorBody()?.string()
             if (!errorJson.isNullOrEmpty()) {

@@ -17,8 +17,8 @@ interface ApiService {
     fun checkPoint(@Body pointRequest: PointRequest): Call<PointResponse>
 
     @GET("history")
-    fun getHistory(@Body historyRequest: HistoryRequest): Call<HistoryResponse>
+    fun getHistory(): Call<List<ResultResponse>>
 
     @DELETE("history")
-    fun removeHistory(@Body historyRemoveRequest: HistoryRemoveRequest): Call<HistoryRemoveResponse>
+    fun removeHistory(): Call<HistoryRemoveResponse>
 }
